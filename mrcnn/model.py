@@ -1217,14 +1217,14 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     # Load image and mask
     image = dataset.load_image(image_id)
     mask, class_ids = dataset.load_mask(image_id)
-    original_shape = image.shape
+    original_shape = image.shape   # e.t.  [640, 480, 3]
     image, window, scale, padding, crop = utils.resize_image(
         image,
         min_dim=config.IMAGE_MIN_DIM,
         min_scale=config.IMAGE_MIN_SCALE,
         max_dim=config.IMAGE_MAX_DIM,
         mode=config.IMAGE_RESIZE_MODE)
-    mask = utils.resize_mask(mask, scale, padding, crop)
+    mask = utils.resize_mask(mask, scale, padding, crop)  # [1024, 1024, n]
 
     # Random horizontal flips.
     # TODO: will be removed in a future update in favor of augmentation
@@ -1273,7 +1273,7 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     # Bounding boxes. Note that some boxes might be all zeros
     # if the corresponding mask got cropped out.
     # bbox: [num_instances, (y1, x1, y2, x2)]
-    bbox = utils.extract_bboxes(mask)
+    bbox = utils.extract_bboxes(mask)   # [n, 4] at 1024 scale
 
     # Active classes
     # Different datasets have different classes, so track the
@@ -1284,7 +1284,7 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
 
     # Resize masks to smaller size to reduce memory usage
     if use_mini_mask:
-        mask = utils.minimize_mask(bbox, mask, config.MINI_MASK_SHAPE)
+        mask = utils.minimize_mask(bbox, mask, config.MINI_MASK_SHAPE)  # [56, 56, n]
 
     # Image meta data
     image_meta = compose_image_meta(image_id, original_shape, image.shape,
@@ -1464,9 +1464,9 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     rpn_bbox: [N, (dy, dx, log(dh), log(dw))] Anchor bbox deltas.
     """
     # RPN Match: 1 = positive anchor, -1 = negative anchor, 0 = neutral
-    rpn_match = np.zeros([anchors.shape[0]], dtype=np.int32)
+    rpn_match = np.zeros([anchors.shape[0]], dtype=np.int32)  # (261888,)
     # RPN bounding boxes: [max anchors per image, (dy, dx, log(dh), log(dw))]
-    rpn_bbox = np.zeros((config.RPN_TRAIN_ANCHORS_PER_IMAGE, 4))
+    rpn_bbox = np.zeros((config.RPN_TRAIN_ANCHORS_PER_IMAGE, 4))  # (256, 4)
 
     # Handle COCO crowds
     # A crowd box in COCO is a bounding box around several instances. Exclude
@@ -1487,7 +1487,7 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
         no_crowd_bool = np.ones([anchors.shape[0]], dtype=bool)
 
     # Compute overlaps [num_anchors, num_gt_boxes]
-    overlaps = utils.compute_overlaps(anchors, gt_boxes)
+    overlaps = utils.compute_overlaps(anchors, gt_boxes)  # (261888, n)  n=gt_boxes numbers
 
     # Match anchors to GT Boxes
     # If an anchor overlaps a GT box with IoU >= 0.7 then it's positive.
@@ -1606,7 +1606,7 @@ def generate_random_rois(image_shape, count, gt_class_ids, gt_boxes):
         # into x1, y1, x2, y2 order
         x1, x2 = np.split(np.sort(x1x2, axis=1), 2, axis=1)
         y1, y2 = np.split(np.sort(y1y2, axis=1), 2, axis=1)
-        box_rois = np.hstack([y1, x1, y2, x2])
+        box_rois = np.hstack([y1, x1, y2, x2])  # (225, 4)
         rois[rois_per_box * i:rois_per_box * (i + 1)] = box_rois
 
     # Generate random ROIs anywhere in the image (10% of count)
@@ -1723,11 +1723,18 @@ def data_generator(dataset, config, shuffle=True, augment=False, augmentation=No
                 continue
 
             # RPN Targets
+            '''
+                rpn_match: (261888,)   -1 negtive iou < 0.3 1 positive iou > 0.7 or the anchor match gt best(even < 0.7)
+                rpn_bbox:   (256, 4)    [N, (dy, dx, log(dh), log(dw))] Anchor bbox deltas.
+            '''
             rpn_match, rpn_bbox = build_rpn_targets(image.shape, anchors,
                                                     gt_class_ids, gt_boxes, config)
 
             # Mask R-CNN Targets
             if random_rois:
+                '''
+                    rpn_rois: generate random rois 90% around ground_truth 10% in whole area
+                '''
                 rpn_rois = generate_random_rois(
                     image.shape, random_rois, gt_class_ids, gt_boxes)
                 if detection_targets:

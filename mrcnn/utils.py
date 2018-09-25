@@ -88,7 +88,7 @@ def compute_overlaps(boxes1, boxes2):
 
     # Compute overlaps to generate matrix [boxes1 count, boxes2 count]
     # Each cell contains the IoU value.
-    overlaps = np.zeros((boxes1.shape[0], boxes2.shape[0]))
+    overlaps = np.zeros((boxes1.shape[0], boxes2.shape[0]))  # (261888, n)
     for i in range(overlaps.shape[1]):
         box2 = boxes2[i]
         overlaps[:, i] = compute_iou(box2, boxes1, area2[i], area1)
