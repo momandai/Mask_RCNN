@@ -55,7 +55,7 @@ from mrcnn.model import log
 # MS COCO Dataset
 import coco
 config = coco.CocoConfig()
-COCO_DIR = "/media/mo/bf81f8f5-9c77-425b-841c-a29fcfb0d2bc/data/COCO2017"  # TODO: enter value here
+COCO_DIR = "/home/mo/data_sets/coco2017"  # TODO: enter value here
 
 
 # ## Dataset
@@ -188,17 +188,17 @@ visualize.display_instances(image, bbox, mask, class_ids, dataset.class_names)
 
 
 # Add augmentation and mask resizing.
-# image, image_meta, class_ids, bbox, mask = modellib.load_image_gt(
-#     dataset, config, image_id, augment=True, use_mini_mask=True)
-# log("mask", mask)
-# display_images([image]+[mask[:,:,i] for i in range(min(mask.shape[-1], 7))])
-#
-#
-# # In[10]:
-#
-#
-# mask = utils.expand_mask(bbox, mask, image.shape)
-# visualize.display_instances(image, bbox, mask, class_ids, dataset.class_names)
+image, image_meta, class_ids, bbox, mask = modellib.load_image_gt(
+    dataset, config, image_id, augment=True, use_mini_mask=True)
+log("mask", mask)
+display_images([image]+[mask[:,:,i] for i in range(min(mask.shape[-1], 7))])
+
+
+# In[10]:
+
+
+mask = utils.expand_mask(bbox, mask, image.shape)
+visualize.display_instances(image, bbox, mask, class_ids, dataset.class_names)
 
 
 # ## Anchors
