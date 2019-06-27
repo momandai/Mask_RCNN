@@ -55,7 +55,7 @@ from mrcnn.model import log
 # MS COCO Dataset
 import coco
 config = coco.CocoConfig()
-COCO_DIR = "/home/mo/data_sets/coco2017"  # TODO: enter value here
+COCO_DIR = "/media/pluto/pluto/data/coco"  # TODO: enter value here
 
 
 # ## Dataset
